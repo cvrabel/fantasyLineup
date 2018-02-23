@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Chris Vrabel
 # 2/17/18
 
@@ -63,8 +64,9 @@ def playActives(driver):
 
 def loginThenSetLineup(username, password):
 	chrome_options = webdriver.ChromeOptions()
-	# chrome_options.add_argument('headless')
+	chrome_options.add_argument('headless')
 	driver = webdriver.Chrome(chrome_options=chrome_options)
+	# driver = webdriver.Firefox()
 	print("Webdriver opened chrome")
 
 	try:
