@@ -25,14 +25,17 @@ def login(username, password, driver):
 	driver.find_element_by_xpath("(//input)[2]").send_keys(password)
 	driver.find_element_by_xpath("//button[2]").click()
 	driver.switch_to_default_content()
-	time.sleep(3)
+	time.sleep(2)
+	driver.find_element_by_partial_link_text("Fri").click()
+	time.sleep(1)
 
 def playActives(driver):
 	playerRowList = driver.find_elements_by_class_name("pncPlayerRow")
+	
 	numPlayers = len(playerRowList) - 1
 
 	for n in range(numPlayers-6, numPlayers):
-		pncSlot = "pncSlot_" + str(n)
+		pncSlot = "pncSlot_" + str(n+numPlayers)
 		gameStatusList = driver.find_elements_by_class_name("gameStatusDiv")
 		print(playerRowList[n].get_attribute("id"))
 		if playerRowList[n].find_element_by_id(pncSlot).text == "Bench" and len(gameStatusList[n].text) != 0:
@@ -53,7 +56,7 @@ def playActives(driver):
 				playerNumber = int(idString[idString.index("_")+1:])
 
 				# Find game status of that player today. If no game then move player here
-				if len(gameStatusList[playerNumber].text) == 0:
+				if len(gameStatusList[playerNumber-numPlayers].text) == 0:
 					hereButtonList[m].click()
 					break
 
@@ -73,7 +76,7 @@ def loginThenSetLineup(item):
 		seasonId = item['seasonId']
 
 		chrome_options = webdriver.ChromeOptions()
-		chrome_options.add_argument('headless')
+		# chrome_options.add_argument('headless')
 		driver = webdriver.Chrome(chrome_options=chrome_options)
 		print("Webdriver opened chrome")
 
@@ -95,10 +98,10 @@ def loginThenSetLineup(item):
 def setLineupForEachItem(items):
 	for item in items:
 		for x in range(5):
-			try:
-				loginThenSetLineup(item)
-			except:
-				continue
+			# try:
+			loginThenSetLineup(item)
+			# except:
+				# continue
 			print("Set lineup for {}".format(item['email']))
 			break
 	print("Finished entire table")
