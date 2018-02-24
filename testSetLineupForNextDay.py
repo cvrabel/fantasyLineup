@@ -7,6 +7,8 @@
 
 import time
 import boto3
+import pickle
+from cryptography import crypter
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
@@ -68,13 +70,14 @@ def playActives(driver):
 
 def loginThenSetLineup(item):
 	try:
+		keyPickle = pickle.load(open("passKey.p","rb"))
+		crypto = crypter.AESCipher(keyPickle)
 		username = item['email']
-		password = item['password']
 		leagueId = item['leagueId']
 		teamId = item['teamId']
 		seasonId = item['seasonId']
 		chrome_options = webdriver.ChromeOptions()
-		# chrome_options.add_argument('headless')
+		chrome_options.add_argument('headless')
 		driver = webdriver.Chrome(chrome_options=chrome_options)
 		print("Webdriver opened chrome")
 
@@ -85,7 +88,7 @@ def loginThenSetLineup(item):
 		WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
 
 		# Login Page
-		login(username, password, driver)
+		login(username, crypto.decrypt(item['password']), driver)
 
 		# Team Page
 		playActives(driver)
