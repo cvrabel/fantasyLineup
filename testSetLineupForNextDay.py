@@ -26,7 +26,7 @@ def login(username, password, driver):
 	driver.find_element_by_xpath("//button[2]").click()
 	driver.switch_to_default_content()
 	time.sleep(2)
-	driver.find_element_by_partial_link_text("Fri").click()
+	driver.find_element_by_partial_link_text("Sat").click()
 	time.sleep(1)
 
 def playActives(driver):
@@ -64,35 +64,35 @@ def playActives(driver):
 
 			time.sleep(1)
 
-	driver.find_element_by_id("pncSaveRoster0").click()
+	# driver.find_element_by_id("pncSaveRoster0").click()
 
 def loginThenSetLineup(item):
-#	try:
-	username = item['email']
-	password = item['password']
-	leagueId = item['leagueId']
-	teamId = item['teamId']
-	seasonId = item['seasonId']
-	chrome_options = webdriver.ChromeOptions()
-	chrome_options.add_argument('headless')
-	driver = webdriver.Chrome(chrome_options=chrome_options)
-	print("Webdriver opened chrome")
+	try:
+		username = item['email']
+		password = item['password']
+		leagueId = item['leagueId']
+		teamId = item['teamId']
+		seasonId = item['seasonId']
+		chrome_options = webdriver.ChromeOptions()
+		# chrome_options.add_argument('headless')
+		driver = webdriver.Chrome(chrome_options=chrome_options)
+		print("Webdriver opened chrome")
 
-	url = "http://games.espn.com/fba/signin?redir=http%3A%2F%2Fgames.espn.com%2Ffba%2Fclubhouse%3FteamId%3D{}%26leagueId%3D{}%26seasonId%3D{}".format(teamId, leagueId, seasonId)
-	# driver.get('http://games.espn.com/fba/signin?redir=http%3A%2F%2Fgames.espn.com%2Ffba%2Fclubhouse%3FteamId%3D1%26leagueId%3D163326%26seasonId%3D2018')
-	driver.get(url)
-	print("Connected to url")
-	WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
+		url = "http://games.espn.com/fba/signin?redir=http%3A%2F%2Fgames.espn.com%2Ffba%2Fclubhouse%3FteamId%3D{}%26leagueId%3D{}%26seasonId%3D{}".format(teamId, leagueId, seasonId)
+		# driver.get('http://games.espn.com/fba/signin?redir=http%3A%2F%2Fgames.espn.com%2Ffba%2Fclubhouse%3FteamId%3D1%26leagueId%3D163326%26seasonId%3D2018')
+		driver.get(url)
+		print("Connected to url")
+		WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
 
-	# Login Page
-	login(username, password, driver)
+		# Login Page
+		login(username, password, driver)
 
-	# Team Page
-	playActives(driver)
+		# Team Page
+		playActives(driver)
 
-#	finally:
-#		driver.quit()
-#		print("Webdriver quit")
+	finally:
+		driver.quit()
+		print("Webdriver quit")
 
 def setLineupForEachItem(items):
 	for item in items:
@@ -108,7 +108,7 @@ def setLineupForEachItem(items):
 	print("Finished entire table")
 
 if __name__ == '__main__':
-	dynamodb = boto3.resource('dynamodb')
+	dynamodb = boto3.resource('dynamodb', region_name='us-east-2')
 	userInfoTable = dynamodb.Table('UserInfo')
 	response = userInfoTable.scan()
 	setLineupForEachItem(response['Items'])
