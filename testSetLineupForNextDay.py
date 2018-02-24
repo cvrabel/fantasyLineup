@@ -31,10 +31,9 @@ def login(username, password, driver):
 
 def playActives(driver):
 	playerRowList = driver.find_elements_by_class_name("pncPlayerRow")
-	
 	numPlayers = len(playerRowList) - 1
 
-	for n in range(numPlayers-6, numPlayers):
+	for n in range(0, numPlayers):
 		pncSlot = "pncSlot_" + str(n+numPlayers)
 		gameStatusList = driver.find_elements_by_class_name("gameStatusDiv")
 		print(playerRowList[n].get_attribute("id"))
@@ -68,41 +67,43 @@ def playActives(driver):
 	driver.find_element_by_id("pncSaveRoster0").click()
 
 def loginThenSetLineup(item):
-	try:
-		username = item['email']
-		password = item['password']
-		leagueId = item['leagueId']
-		teamId = item['teamId']
-		seasonId = item['seasonId']
+#	try:
+	username = item['email']
+	password = item['password']
+	leagueId = item['leagueId']
+	teamId = item['teamId']
+	seasonId = item['seasonId']
+	chrome_options = webdriver.ChromeOptions()
+	chrome_options.add_argument('headless')
+	driver = webdriver.Chrome(chrome_options=chrome_options)
+	print("Webdriver opened chrome")
 
-		chrome_options = webdriver.ChromeOptions()
-		# chrome_options.add_argument('headless')
-		driver = webdriver.Chrome(chrome_options=chrome_options)
-		print("Webdriver opened chrome")
+	url = "http://games.espn.com/fba/signin?redir=http%3A%2F%2Fgames.espn.com%2Ffba%2Fclubhouse%3FteamId%3D{}%26leagueId%3D{}%26seasonId%3D{}".format(teamId, leagueId, seasonId)
+	# driver.get('http://games.espn.com/fba/signin?redir=http%3A%2F%2Fgames.espn.com%2Ffba%2Fclubhouse%3FteamId%3D1%26leagueId%3D163326%26seasonId%3D2018')
+	driver.get(url)
+	print("Connected to url")
+	WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
 
-		url = "http://games.espn.com/fba/signin?redir=http%3A%2F%2Fgames.espn.com%2Ffba%2Fclubhouse%3FteamId%3D{}%26leagueId%3D{}%26seasonId%3D{}".format(teamId, leagueId, seasonId)
-		# driver.get('http://games.espn.com/fba/signin?redir=http%3A%2F%2Fgames.espn.com%2Ffba%2Fclubhouse%3FteamId%3D1%26leagueId%3D163326%26seasonId%3D2018')
-		driver.get(url)
-		print("Connected to url")
-		WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
+	# Login Page
+	login(username, password, driver)
 
-		# Login Page
-		login(username, password, driver)
+	# Team Page
+	playActives(driver)
 
-		# Team Page
-		playActives(driver)
-
-	finally:
-		driver.quit()
+#	finally:
+#		driver.quit()
+#		print("Webdriver quit")
 
 def setLineupForEachItem(items):
 	for item in items:
 		for x in range(5):
-			# try:
-			loginThenSetLineup(item)
-			# except:
-				# continue
-			print("Set lineup for {}".format(item['email']))
+			try:
+				print(x)
+				loginThenSetLineup(item)
+			except:
+				print("failed")
+				continue
+			print("Set lineup for {}, leagueId={}".format(item['email'], item['leagueId']))
 			break
 	print("Finished entire table")
 

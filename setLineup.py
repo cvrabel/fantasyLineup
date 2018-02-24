@@ -31,7 +31,7 @@ def playActives(driver):
 	playerRowList = driver.find_elements_by_class_name("pncPlayerRow")
 	numPlayers = len(playerRowList) - 1
 
-	for n in range(numPlayers-6, numPlayers):
+	for n in range(0, numPlayers):
 		pncSlot = "pncSlot_" + str(n)
 		gameStatusList = driver.find_elements_by_class_name("gameStatusDiv")
 		print(playerRowList[n].get_attribute("id"))
@@ -91,6 +91,7 @@ def loginThenSetLineup(item):
 
 	finally:
 		driver.quit()
+		print("Webdriver quit")
 
 def setLineupForEachItem(items):
 	for item in items:
