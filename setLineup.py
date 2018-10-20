@@ -17,6 +17,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from datetime import datetime
 
 teamNames = ['Scranton Stranglers', 'Nuclear Guam', 'Team Synchro', 'Team Droptop', 'Big Baller Brown', 'Chi Performing Artists', \
 			 'Ithaca Splash Brothers', 'Wolf Wall', 'Tompkins CAT', 'Richmond Rogues', 'Boston Jellyfam', 'Luzern\'s Iron Chef']
@@ -43,6 +44,17 @@ def navigateToEditRosterPage(teamName, driver):
 	time.sleep(3)
 
 def setLineup(driver):
+	daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+	tomorrow = daysList[datetime.today().weekday() + 1]
+
+	driver.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow)).click()
+	opponents = driver.find_elements_by_xpath("//*[@title='Opponent']")
+	for t in opponents:
+		print(t.text)
+	
+	numGamesToday = len([k for k in opponents if ('OPP' not in k.text and '--' not in k.text)])
+	print(numGamesToday)
+
 	# playerRowList = driver.find_elements_by_class_name("pncPlayerRow")
 	# numPlayers = len(playerRowList) - 1
 
@@ -97,7 +109,7 @@ def main(email, password, leagueId):
 		for teamName in teamNames:
 			print("Setting lineup for " + teamName)
 			navigateToEditRosterPage(teamName, driver)
-			# setLineup(driver)
+			setLineup(driver)
 			driver.get(url)
 
 	finally:
