@@ -43,17 +43,53 @@ def navigateToEditRosterPage(teamName, driver):
 	driver.find_element_by_link_text("Continue").click()
 	time.sleep(3)
 
-def setLineup(driver):
-	daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-	tomorrow = daysList[datetime.today().weekday() + 1]
+def extractPlayerFromRow(playerInfo, playerStats):
+	playerName = playerInfo.find_element_by_css_selector("a.link.clr-link.pointer").text
+	print(playerName)
+	playerPositions = playerInfo.find_element_by_css_selector("span.playerinfo__playerpos.ttu").text.split(", ")
+	playerHasGameToday = findIfHasGameToday(playerInfo)
+	print(findIfInjured(playerInfo))
 
-	driver.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow)).click()
+
+def findIfHasGameToday(playerInfo):
+	links = playerInfo.find_elements_by_css_selector("a.clr-link")
+	for l in links:
+		if "AM" in l.text or "PM" in l.text:
+			return True
+	return False
+
+def findIfInjured(playerInfo):
+	try:
+		playerInfo.find_element_by_css_selector("span.jsx-425950755.playerinfo.playerinfo__injurystatus.injury-status_medium").text
+		return True
+	except:
+		return False
+def setLineup(driver):
+	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+	# tomorrow = daysList[datetime.today().weekday() + 1]
+	# driver.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow)).click()
 	opponents = driver.find_elements_by_xpath("//*[@title='Opponent']")
-	for t in opponents:
-		print(t.text)
-	
+
 	numGamesToday = len([k for k in opponents if ('OPP' not in k.text and '--' not in k.text)])
-	print(numGamesToday)
+	
+	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
+	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
+
+	playerInfoRows = leftTable.find_elements_by_class_name('Table2__tr--lg')
+	playerStatsRows = rightTable.find_elements_by_class_name('Table2__tr--lg')
+
+	playerList = []
+
+	for i in range(0, len(playerInfoRows)):
+		# player = extractPlayerFromRow(playerInfoRows[i], playerStatsRows[i])
+		# playerList.append(player)
+		try:
+			player = extractPlayerFromRow(playerInfoRows[i], playerStatsRows[i])
+			playerList.append(player)
+		except:
+			pass
+
+
 
 	# playerRowList = driver.find_elements_by_class_name("pncPlayerRow")
 	# numPlayers = len(playerRowList) - 1
