@@ -19,6 +19,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from datetime import datetime
 
+from PlayerRow import PlayerRow
+
 teamNames = ['Scranton Stranglers', 'Nuclear Guam', 'Team Synchro', 'Team Droptop', 'Big Baller Brown', 'Chi Performing Artists', \
 			 'Ithaca Splash Brothers', 'Wolf Wall', 'Tompkins CAT', 'Richmond Rogues', 'Boston Jellyfam', 'Luzern\'s Iron Chef']
 
@@ -34,22 +36,41 @@ def login(username, password, driver):
 	
 	# driver.find_element_by_xpath("//button[1]").click()
 	driver.switch_to_default_content()
-	time.sleep(2)
+	time.sleep(3)
 
 def navigateToEditRosterPage(teamName, driver):
 	dropdowns = driver.find_elements_by_class_name("dropdown__select")
 	dropdowns[0].send_keys("Edit Rosters")
 	dropdowns[1].send_keys(teamName)
 	driver.find_element_by_link_text("Continue").click()
-	time.sleep(3)
+	time.sleep(5)
 
 def extractPlayerFromRow(playerInfo, playerStats):
-	playerName = playerInfo.find_element_by_css_selector("a.link.clr-link.pointer").text
+	playerName = findPlayerName(playerInfo)
 	print(playerName)
-	playerPositions = playerInfo.find_element_by_css_selector("span.playerinfo__playerpos.ttu").text.split(", ")
-	playerHasGameToday = findIfHasGameToday(playerInfo)
-	print(findIfInjured(playerInfo))
+	
+	if playerName == "Empty" or playerName == "BLANK":
+		return PlayerRow(playerName, None, None, None, None, None, None)
 
+	positions = playerInfo.find_element_by_css_selector("span.playerinfo__playerpos.ttu").text.split(", ")
+	hasGameToday = findIfHasGameToday(playerInfo)
+	isInjured = findIfInjured(playerInfo)
+	currentPosition = playerInfo.find_element_by_css_selector("div.jsx-2810852873.table--cell").text
+	percentOwned = playerStats.find_element_by_css_selector("[title='Percent Owned']").text
+	pr15 = playerStats.find_element_by_css_selector("[title^='Player Rating']").text
+	return PlayerRow(playerName, currentPosition, positions, hasGameToday, isInjured, percentOwned, pr15)
+
+
+def findPlayerName(playerInfo):
+	try:
+		playerName = playerInfo.find_element_by_css_selector("a.link.clr-link.pointer").text
+		return playerName
+	except:
+		try:
+			playerName = playerInfo.find_element_by_css_selector("div.jsx-2448508547.player-column__empty.flex.items-center.player-info").text
+			return playerName
+		except:
+			return "BLANK"
 
 def findIfHasGameToday(playerInfo):
 	links = playerInfo.find_elements_by_css_selector("a.clr-link")
@@ -64,13 +85,15 @@ def findIfInjured(playerInfo):
 		return True
 	except:
 		return False
+
+
 def setLineup(driver):
 	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 	# tomorrow = daysList[datetime.today().weekday() + 1]
-	# driver.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow)).click()
-	opponents = driver.find_elements_by_xpath("//*[@title='Opponent']")
-
-	numGamesToday = len([k for k in opponents if ('OPP' not in k.text and '--' not in k.text)])
+	thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
+	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
+	tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
+	tomorrowButton.click()
 	
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
@@ -79,59 +102,98 @@ def setLineup(driver):
 	playerStatsRows = rightTable.find_elements_by_class_name('Table2__tr--lg')
 
 	playerList = []
-
 	for i in range(0, len(playerInfoRows)):
-		# player = extractPlayerFromRow(playerInfoRows[i], playerStatsRows[i])
-		# playerList.append(player)
-		try:
-			player = extractPlayerFromRow(playerInfoRows[i], playerStatsRows[i])
-			playerList.append(player)
-		except:
-			pass
+		player = extractPlayerFromRow(playerInfoRows[i], playerStatsRows[i])
+		playerList.append(player)
+
+	indexOfBlank = 10
+	for i in range(0, len(playerList)):
+		if playerList[i].playerName == "BLANK":
+			indexOfBlank = i 
+			break
+
+	nextIndexToMove = indexOfBlank + 1
+	while(True):
+		print("Index to Move: " + str(nextIndexToMove))
+		prettyPrint(playerList)
+		attempts = 0
+		while attempts < 3:
+			try:
+				nextIndexToMove, playerList = moveBenchPlayer(leftTable, nextIndexToMove, playerList)
+				break
+			except Exception as e:
+				attempts += 1
+				print(e)
+				
+		if nextIndexToMove == -1 or nextIndexToMove > len(playerList):
+			break
 
 
+def moveBenchPlayer(leftTable, indexToMove, playerList):
+	player = playerList[indexToMove]
+	if player.currentPosition != "Bench":
+		return -1, []
 
-	# playerRowList = driver.find_elements_by_class_name("pncPlayerRow")
-	# numPlayers = len(playerRowList) - 1
+	if player.hasGameToday:
+		rowToMove = leftTable.find_element_by_css_selector("[data-idx^='{}']".format(str(indexToMove)))
+		time.sleep(1)
+		moveButton = rowToMove.find_element_by_link_text("MOVE").click()
+		time.sleep(1)
+		hereButtons = leftTable.find_elements_by_link_text("HERE")
+		return attemptToMoveToStart(indexToMove, hereButtons, playerList)
 
-	# for n in range(0, numPlayers):
-	# 	pncSlot = "pncSlot_" + str(n)
-	# 	gameStatusList = driver.find_elements_by_class_name("gameStatusDiv")
-	# 	print(playerRowList[n].get_attribute("id"))
-	# 	if playerRowList[n].find_element_by_id(pncSlot).text == "Bench" and len(gameStatusList[n].text) != 0:
-	# 		# Find button of player to move, and get id of that button
-	# 		moveButton = driver.find_elements_by_class_name("pncButtonMove")[n]
-	# 		moveButtonId = moveButton.get_attribute("id")
-	# 		moveButtonNumber = moveButtonId[moveButtonId.index("_")+1:]
-	# 		moveButton.click()
+	return indexToMove+1, playerList
 
-	# 		time.sleep(1)
+def attemptToMoveToStart(indexToMove, hereButtons, playerList):
+	for button in hereButtons:
+		hereIndex = int(button.find_element_by_xpath("../../../..").get_attribute("data-idx"))
+		playerToMove = playerList[indexToMove]
+		playerAtHereIndex = playerList[hereIndex]
+		if playerToMove.currentPosition != "Bench":
+			return -1, []
+		elif playerAtHereIndex.playerName == "Empty":
+			button.click()
+			playerToMove.currentPosition = playerAtHereIndex.currentPosition
+			playerList[hereIndex] = playerList[indexToMove]
+			del playerList[indexToMove]
+			return indexToMove, playerList
+		elif playerAtHereIndex.hasGameToday == False:
+			button.click()
+			playerList = swapPositions(indexToMove, hereIndex, playerList)
+			return indexToMove, playerList
+		elif len(playerAtHereIndex.positions) > len(playerToMove.positions):
+			button.click()
+			playerList = swapPositions(indexToMove, hereIndex, playerList)
+			return indexToMove, playerList
+		elif playerAtHereIndex.percentOwned < playerToMove.percentOwned:
+			button.click()
+			playerList = swapPositions(indexToMove, hereIndex, playerList)
+			return indexToMove, playerList
+	return indexToMove+1, playerList
 
-	# 		# Get all buttons where the player can be moved to
-	# 		hereButtonList = driver.find_elements_by_class_name("pncButtonHere")
+def swapPositions(indexToMove, hereIndex, playerList):
+	startingPosition = playerList[hereIndex].currentPosition
+	playerList[hereIndex].setCurrentPosition(playerList[indexToMove].currentPosition)
+	playerList[indexToMove].setCurrentPosition(startingPosition)
+	playerList[hereIndex], playerList[indexToMove] = playerList[indexToMove], playerList[hereIndex]
+	return playerList
 
-	# 		for m in range(len(hereButtonList)):
-	# 			# Get id of the destination
-	# 			idString = hereButtonList[m].get_attribute("id")
-	# 			playerNumber = int(idString[idString.index("_")+1:])
-
-	# 			# Find game status of that player today. If no game then move player here
-	# 			if len(gameStatusList[playerNumber].text) == 0:
-	# 				hereButtonList[m].click()
-	# 				break
-
-	# 			if m == len(hereButtonList) - 1:
-	# 				driver.find_element_by_id("pncButtonMoveSelected_" + moveButtonNumber).click()
-
-	# 		time.sleep(1)
-
-	# driver.find_element_by_id("pncSaveRoster0").click()
+def prettyPrint(playerList):
+	print("Updated List")
+	for player in playerList:
+		print(player.playerName)
+	print("list length: " + str(len(playerList)))
+	print("-------")
 
 def main(email, password, leagueId):
 	try:
 		chrome_options = webdriver.ChromeOptions()
-		# chrome_options.add_argument('headless')
+		chrome_options.add_argument('headless')
+
+		time.sleep(2) # to avoid the 'driver' referenced before assignment error
 		driver = webdriver.Chrome(chrome_options=chrome_options)
+
+
 		print("Webdriver opened chrome")
 
 		url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
@@ -146,6 +208,7 @@ def main(email, password, leagueId):
 			print("Setting lineup for " + teamName)
 			navigateToEditRosterPage(teamName, driver)
 			setLineup(driver)
+			print("Finished setting lineup for " + teamName)
 			driver.get(url)
 
 	finally:
@@ -161,4 +224,6 @@ if __name__ == '__main__':
 	parser.add_argument("-l", "--leagueId", type=str, 
 		help="ESPN fantasy basketball leagueId", required=True)
 	args = parser.parse_args()
+	startTime = time.time()
 	main(args.email, args.password, args.leagueId)
+	print("--- %s seconds to execute ---" % (time.time() - startTime))
