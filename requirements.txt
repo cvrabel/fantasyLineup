@@ -1,0 +1,5 @@
+
+boto3==1.6.18
+botocore==1.9.18
+selenium==2.53.6
+chromedriver-installer==0.0.6

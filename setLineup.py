@@ -6,8 +6,8 @@
 # Login as League Manager and set every team's lineup.
 
 import time
-import boto3
 import sys
+import os
 from argparse import ArgumentParser
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -18,8 +18,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from datetime import datetime
-
 from PlayerRow import PlayerRow
+from WebDriverWrapper import WebDriverWrapper
 
 teamNames = ['Scranton Stranglers', 'Nuclear Guam', 'Team Synchro', 'Team Droptop', 'Big Baller Brown', 'Chi Performing Artists', \
 			 'Ithaca Splash Brothers', 'Wolf Wall', 'Tompkins CAT', 'Richmond Rogues', 'Boston Jellyfam', 'Luzern\'s Iron Chef']
@@ -90,10 +90,10 @@ def findIfInjured(playerInfo):
 def setLineup(driver):
 	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 	# tomorrow = daysList[datetime.today().weekday() + 1]
-	thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
+	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
 	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
-	tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
-	tomorrowButton.click()
+	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
+	# tomorrowButton.click()
 	
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
@@ -186,34 +186,48 @@ def prettyPrint(playerList):
 	print("-------")
 
 def main(email, password, leagueId):
-	try:
-		chrome_options = webdriver.ChromeOptions()
-		chrome_options.add_argument('headless')
+	chrome_options = webdriver.ChromeOptions()
+	chrome_options.add_argument('--headless')
 
-		time.sleep(2) # to avoid the 'driver' referenced before assignment error
-		driver = webdriver.Chrome(chrome_options=chrome_options)
+	# Binary Location and Path set to work with AWS Lambda 
+	# chrome_options.binary_location=os.getcwd() + '/headless-chromium'
+	# executable_path='var/task/chromedriver', 
+	# driver = webdriver.Chrome(executable_path=os.getcwd() + '/chromedriver-Linux64', chrome_options=chrome_options)
+	driver = WebDriverWrapper()
+	# driver = None
+	# attempts = 0
+	# while attempts < 5:
+	# 	try:
+	# 		driver = webdriver.Chrome(chrome_options=chrome_options)
+	# 		break
+	# 	except:
+	# 		attempts += 1
 
-
-		print("Webdriver opened chrome")
-
-		url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
+	print("Webdriver opened chrome")
+	url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
+	driver.get(url)
+	print("Connected to url")
+	WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
+	time.sleep(5)
+	# Login Page
+	login(email, password, driver)
+	
+	for teamName in teamNames:
+		print("Setting lineup for " + teamName)
+		navigateToEditRosterPage(teamName, driver)
+		setLineup(driver)
+		print("Finished setting lineup for " + teamName)
 		driver.get(url)
-		print("Connected to url")
-		WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
-		time.sleep(5)
-		# Login Page
-		login(email, password, driver)
-		
-		for teamName in teamNames:
-			print("Setting lineup for " + teamName)
-			navigateToEditRosterPage(teamName, driver)
-			setLineup(driver)
-			print("Finished setting lineup for " + teamName)
-			driver.get(url)
 
-	finally:
-		driver.quit()
-		print("Webdriver quit")
+	driver.quit()
+	print("Webdriver quit")
+
+def lambda_handler(event, context):
+	email = os.environ['email']
+	password = os.environ['password']
+	leagueId = os.environ['leagueId']
+	teams = os.environ['teams']
+	main(email, password, leagueId)
 
 if __name__ == '__main__':
 	parser = ArgumentParser()
