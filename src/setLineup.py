@@ -2,8 +2,8 @@
 # Chris Vrabel
 # 10/19/18
 
-# Script for Fantasy Basketball lineup setting.
-# Login as League Manager and set every team's lineup.
+# Lambda Script for Fantasy Basketball lineup setting.
+# Login as League Manager and set specified team's lineup.
 
 import time
 import sys
@@ -87,22 +87,71 @@ def login(username, password, driver):
 
 def navigateToEditRosterPage(teamName, driver):
 	dropdowns = driver.find_elements_by_class_name("dropdown__select")
-	dropdowns[0].send_keys("Edit Rosters")
+	dropdowns[0].send_keys("Edit Roster")
 	dropdowns[1].send_keys(teamName)
 	driver.find_element_by_link_text("Continue").click()
 	time.sleep(5)
 
-def extractPlayerFromRow(playerInfo, playerStats):
-	playerName = findPlayerName(playerInfo)
-	print(playerName)
+def setLineup(driver):
+	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+	# tomorrow = daysList[datetime.today().weekday() + 1]
+	thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
+	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
+	tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
+	# tomorrowButton.click()
 	
+	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
+	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
+
+	playerInfoRows = leftTable.find_elements_by_class_name('Table2__tr--lg')
+	playerStatsRows = rightTable.find_elements_by_class_name('Table2__tr--lg')
+
+	playerList = []
+	for i in range(0, len(playerInfoRows)):
+		player = extractPlayerFromRow(playerInfoRows[i], playerStatsRows[i])
+		playerList.append(player)
+
+	indexOfBlank = 10
+	for i in range(0, len(playerList)):
+		if playerList[i].playerName == "BLANK":
+			indexOfBlank = i 
+			break
+
+	nextIndexToMove = indexOfBlank + 1
+	while(True):
+		prettyPrint(playerList, str(nextIndexToMove))
+		attempts = 0
+		while attempts < 3:
+			try:
+				nextIndexToMove, playerList = moveBenchPlayer(leftTable, nextIndexToMove, playerList)
+				break
+			except Exception as e:
+				attempts += 1
+				print(e)
+				
+		if nextIndexToMove == -1 or nextIndexToMove >= len(playerList):
+			break
+
+	emptyStartingSpots, gamesOnBench = findEmptyStartingSpotsAndGamesOnBench(playerList, indexOfBlank)
+	
+	if len(emptyStartingSpots) > 0 and len(gamesOnBench) > 0:
+		print("Empty starting spots with games on bench. Attempting to fix.")
+		leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
+		attemptToMoveToStartWithReArrange(leftTable, emptyStartingSpots, gamesOnBench, playerList, indexOfBlank)
+
+
+
+def extractPlayerFromRow(playerInfo, playerStats):
+	currentPosition = playerInfo.find_element_by_css_selector("div.jsx-2810852873.table--cell").text
+	playerName = findPlayerName(playerInfo)
+	print(currentPosition + ": " + playerName)
+
 	if playerName == "Empty" or playerName == "BLANK":
-		return PlayerRow(playerName, None, None, None, None, None, None)
+		return PlayerRow(playerName, currentPosition, None, False, None, None, None)
 
 	positions = playerInfo.find_element_by_css_selector("span.playerinfo__playerpos.ttu").text.split(", ")
 	hasGameToday = findIfHasGameToday(playerInfo)
 	isInjured = findIfInjured(playerInfo)
-	currentPosition = playerInfo.find_element_by_css_selector("div.jsx-2810852873.table--cell").text
 	percentOwned = playerStats.find_element_by_css_selector("[title='Percent Owned']").text
 	pr15 = playerStats.find_element_by_css_selector("[title^='Player Rating']").text
 	return PlayerRow(playerName, currentPosition, positions, hasGameToday, isInjured, percentOwned, pr15)
@@ -136,52 +185,95 @@ def findIfInjured(playerInfo):
 		return False
 
 
-def setLineup(driver):
-	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-	# tomorrow = daysList[datetime.today().weekday() + 1]
-	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
-	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
-	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
-	# tomorrowButton.click()
-	
-	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
-	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
+def attemptToMoveToStartWithReArrange(leftTable, emptyStartingSpots, gamesOnBench, playerList, indexOfBlank):
+	numEmptyStartingSpots = len(emptyStartingSpots)
+	numGamesOnBench = len(gamesOnBench)
+	for i in range(indexOfBlank):
+		for e in range(len(emptyStartingSpots)):
+			for g in range(len(gamesOnBench)):
+				currentSpot = playerList[i]
+				emptyStart = playerList[emptyStartingSpots[e]]
+				gameOnBench = playerList[gamesOnBench[g]]
+				if canMoveToSpot(currentSpot, emptyStart) and canMoveToSpot(gameOnBench, currentSpot):
+					print("Can move currentSpot: {} to emptyStart: {}. Can move gameOnBench: {} to currentSpot: {}" \
+						.format(str(i), str(emptyStartingSpots[e]), str(gamesOnBench[g]), str(i)))
+					playerList = moveToSpecificIndex(leftTable, i, emptyStartingSpots[e], playerList)
+					prettyPrint(playerList, i)
+					playerList = moveToSpecificIndex(leftTable, gamesOnBench[g], i, playerList)
+					prettyPrint(playerList, gamesOnBench[g])
+					numEmptyStartingSpots = numEmptyStartingSpots - 1
+					numGamesOnBench = numGamesOnBench - 1
+				if numEmptyStartingSpots == 0 or numGamesOnBench == 0:
+					print("Done rearranging.")
+					return
 
-	playerInfoRows = leftTable.find_elements_by_class_name('Table2__tr--lg')
-	playerStatsRows = rightTable.find_elements_by_class_name('Table2__tr--lg')
 
-	playerList = []
-	for i in range(0, len(playerInfoRows)):
-		player = extractPlayerFromRow(playerInfoRows[i], playerStatsRows[i])
-		playerList.append(player)
+def moveToSpecificIndex(leftTable, fromSpot, toSpot, playerList):
+	rowToMove = leftTable.find_element_by_css_selector("[data-idx^='{}']".format(str(fromSpot)))
+	time.sleep(1)
+	moveButton = rowToMove.find_element_by_link_text("MOVE").click()
+	time.sleep(1)
+	hereButtons = leftTable.find_elements_by_link_text("HERE")
+	for button in hereButtons:
+		hereIndex = int(button.find_element_by_xpath("../../../..").get_attribute("data-idx"))
+		playerAtHereIndex = playerList[hereIndex]
+		if hereIndex == toSpot:
+			print("Rearranging from index {} to index {}".format(fromSpot, toSpot))
+			button.click()
+			return swapPositions(fromSpot, hereIndex, playerList)
 
-	indexOfBlank = 10
-	for i in range(0, len(playerList)):
-		if playerList[i].playerName == "BLANK":
-			indexOfBlank = i 
-			break
+	# Did not get to move so click move again
+	rowToMove.find_element_by_link_text("MOVE").click()
+	return playerList
 
-	nextIndexToMove = indexOfBlank + 1
-	while(True):
-		prettyPrint(playerList, str(nextIndexToMove))
-		attempts = 0
-		while attempts < 3:
-			try:
-				nextIndexToMove, playerList = moveBenchPlayer(leftTable, nextIndexToMove, playerList)
-				break
-			except Exception as e:
-				attempts += 1
-				print(e)
-				
-		if nextIndexToMove == -1 or nextIndexToMove > len(playerList):
-			break
+
+def canMoveToSpot(fromSpot, toSpot):
+	fromPositions = fromSpot.positions
+	toPosition = toSpot.currentPosition
+	if fromPositions is None:
+		return False
+	elif toPosition == "UTIL":
+		return True
+	elif toPosition == "PG":
+		return findIfPositionsContains(fromPositions, "PG")
+	elif toPosition == "SG":
+		return findIfPositionsContains(fromPositions, "SG")
+	elif toPosition == "SF":
+		return findIfPositionsContains(fromPositions, "SF")
+	elif toPosition == "PF":
+		return findIfPositionsContains(fromPositions, "PF")
+	elif toPosition == "C":
+		return findIfPositionsContains(fromPositions, "C")
+	elif toPosition == "G":
+		return findIfPositionsContains(fromPositions, "G")
+	elif toPosition == "F":
+		return findIfPositionsContains(fromPositions, "F")
+
+def findIfPositionsContains(fromPositions, position):
+	for fromPos in fromPositions:
+		if position in fromPos:
+			return True
+	return False
+
+def findEmptyStartingSpotsAndGamesOnBench(playerList, indexOfBlank):
+	emptyStartingSpots = []
+	gamesOnBench = []
+	for i in reversed(range(len(playerList))):
+		if i < indexOfBlank and playerList[i].hasGameToday == False:
+			print("Found empty starting spot.")
+			emptyStartingSpots.append(i)
+		elif i > indexOfBlank and playerList[i].hasGameToday == True and playerList[i].currentPosition == "Bench":
+			print("Found games on bench.")
+			gamesOnBench.append(i)
+	return emptyStartingSpots, gamesOnBench
+
 
 
 def moveBenchPlayer(leftTable, indexToMove, playerList):
 	player = playerList[indexToMove]
 	if player.currentPosition != "Bench":
 		print("PlayerToMove not on bench.  Ignoring")
-		return -1, []
+		return -1, playerList
 
 	if player.hasGameToday:
 		rowToMove = leftTable.find_element_by_css_selector("[data-idx^='{}']".format(str(indexToMove)))
@@ -189,12 +281,12 @@ def moveBenchPlayer(leftTable, indexToMove, playerList):
 		moveButton = rowToMove.find_element_by_link_text("MOVE").click()
 		time.sleep(1)
 		hereButtons = leftTable.find_elements_by_link_text("HERE")
-		return attemptToMoveToStart(indexToMove, hereButtons, playerList)
+		return attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable)
 
 	print("PlayerToMove has no game today.  Move to next index.")
 	return indexToMove+1, playerList
 
-def attemptToMoveToStart(indexToMove, hereButtons, playerList):
+def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 	for button in hereButtons:
 		hereIndex = int(button.find_element_by_xpath("../../../..").get_attribute("data-idx"))
 		playerToMove = playerList[indexToMove]
@@ -216,7 +308,7 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList):
 			return indexToMove, playerList
 		elif len(playerAtHereIndex.positions) > len(playerToMove.positions):
 			print(playerAtHereIndex.positions)
-			print(playerToMove.positions)
+			print(playerToMove.positions)	
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
@@ -233,6 +325,9 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList):
 			print("Can't more here. Continue to next button.")
 			continue
 	print("No place to move. Go to next index.")
+	rowToMove = leftTable.find_element_by_css_selector("[data-idx^='{}']".format(str(indexToMove)))
+	time.sleep(1)
+	rowToMove.find_element_by_link_text("MOVE").click()
 	return indexToMove+1, playerList
 
 def swapPositions(indexToMove, hereIndex, playerList):
@@ -244,10 +339,10 @@ def swapPositions(indexToMove, hereIndex, playerList):
 
 def prettyPrint(playerList, nextIndexToMove):
 	print("-----------------")
-	print("Index to Move: " + nextIndexToMove)
+	print("Index to Move: " + str(nextIndexToMove))
 	for i in range(0, len(playerList)):
 		player = playerList[i]
-		print(str(i) + ": " + player.playerName)
+		print(player.currentPosition + "(" + str(i) + "): " + player.playerName)
 
 def lambda_handler(event, context):
 	email = os.environ['email']
@@ -264,7 +359,8 @@ if __name__ == '__main__':
 		help="ESPN login password", required=True)
 	parser.add_argument("-l", "--leagueId", type=str, 
 		help="ESPN fantasy basketball leagueId", required=True)
+	parser.add_argument
 	args = parser.parse_args()
 	startTime = time.time()
-	main(args.email, args.password, args.leagueId)
+	main(args.email, args.password, args.leagueId, "Chi Performing Artists")
 	print("--- %s seconds to execute ---" % (time.time() - startTime))

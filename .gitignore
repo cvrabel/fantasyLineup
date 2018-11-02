@@ -1,0 +1,7 @@
+# Ignore these files
+
+pkg_resources/
+src/__pycache__/
+docker-compose.yml
+*.log
+build.zip
