@@ -69,7 +69,7 @@ def main(email, password, leagueId, teams, hasGamesPlayedLimit):
 		time.sleep(1)
 		# Login Page
 		login(email, password, driver)
-		gamesRemainingDict = findGamesRemainingForTeams(driver, url)
+		gamesRemainingDict = findGamesRemainingForTeams(driver, url, teams)
 		print(gamesRemainingDict)
 
 	else:
@@ -81,7 +81,6 @@ def main(email, password, leagueId, teams, hasGamesPlayedLimit):
 		# Login Page
 		login(email, password, driver)
 
-	
 	url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
 	for teamName in teams:
 		driver.get(url)
@@ -120,7 +119,7 @@ Function to find the number of games remaining for each team by navigating to ea
 
 returns: Dict of team name, num games remaining (key, value)
 """
-def findGamesRemainingForTeams(driver, url):
+def findGamesRemainingForTeams(driver, url, teams):
 	boxScoreButtons = driver.find_elements_by_link_text("BOX SCORE")
 	print(len(boxScoreButtons))
 	teamGamesRemaining = {}
@@ -133,6 +132,10 @@ def findGamesRemainingForTeams(driver, url):
 		driver.get(url)
 		time.sleep(2)
 		boxScoreButtons = driver.find_elements_by_link_text("BOX SCORE")
+		if all(team in teamGamesRemaining for team in teams):
+			print("Found games remaining for all teams in team list.")
+			break
+
 	return teamGamesRemaining
 
 """
@@ -173,9 +176,9 @@ Method which handles the general logic of setting lineup for a team.
 def setLineup(driver, gamesRemaining):
 	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 	# tomorrow = daysList[datetime.today().weekday() + 1]
-	thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
+	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
 	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
-	tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
+	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
 	# tomorrowButton.click()
 	
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
@@ -215,13 +218,13 @@ def setLineup(driver, gamesRemaining):
 					print("Zero games remaining. Don't move to starting lineup.")
 				elif gamesRemaining < 0:
 					print("Too many starting, will go over limit. Moving starting players to bench.")
-					nextIndexToMove, playerList, gamesRemaining = movePlayersOutOfStartingLineup(leftTable, playerList, abs(gamesRemaining))
+					nextIndexToMove, playerList, gamesRemaining = movePlayersOutOfStartingLineup(leftTable, playerList, indexOfBlank, abs(gamesRemaining))
 				break
 			except Exception as e:
 				attempts += 1
 				print(e)
 				
-		if nextIndexToMove == -1 or nextIndexToMove >= len(playerList):
+		if nextIndexToMove == -1 or nextIndexToMove >= len(playerList) or gamesRemaining == 0:
 			break
 
 	emptyStartingSpots, gamesOnBench = findEmptyStartingSpotsAndGamesOnBench(playerList, indexOfBlank)
@@ -288,7 +291,7 @@ def findIfInjured(playerInfo):
 """
 Invoked only if we are over the games player limit.  
 Moves numToMove players out of the starting lineup.
-Moves the players with lowest percentage owned values.
+Moves the players with lowest percentage owned values to the bench.
 """
 def movePlayersOutOfStartingLineup(leftTable, playerList, indexOfBlank, numToMove):
 	indicesToRemove = {}
@@ -302,13 +305,13 @@ def movePlayersOutOfStartingLineup(leftTable, playerList, indexOfBlank, numToMov
 			indicesToRemove.update({i: currentPercentOwned })
 		else:
 			for key,value in indicesToRemove.items():
-				if value < currentPercentOwned:
+				if value > currentPercentOwned:
 					del indicesToRemove[key]
 					indicesToRemove.update({i: currentPercentOwned})
 					break
 
-	print("Indices to remove.")
-	print(indicesToRemove)
+	print("Dict of indices to remove: " + str(indicesToRemove))
+
 	# Move the indices in indicesToRemove to bench
 	for key,value in indicesToRemove.items():
 		time.sleep(1)
