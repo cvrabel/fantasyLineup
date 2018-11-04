@@ -119,10 +119,11 @@ returns: Dict of length 2. team name, num games remaining (key, value)
 def findGamesPlayedFromBoxScore(driver):
 	teamNames = driver.find_elements_by_css_selector("span.teamName.truncate")
 	teamLimitDivs = driver.find_elements_by_css_selector("div.team-limits")
+	gamesPlayedSplitBySpace = driver.find_elements_by_xpath("//td[contains(text(),'Cur/Max')]")
 	teamGamesRemaining = {}
 	for i in range(2):
-		gamesPlayedSplitBySpace = teamLimitDivs[i].find_element_by_xpath("//td[contains(text(),'Cur/Max')]").text.split(" ")
-		gamesFraction = gamesPlayedSplitBySpace[2].split("/")
+		gamesPlayedLimit = gamesPlayedSplitBySpace[i].text.split(" ")
+		gamesFraction = gamesPlayedLimit[2].split("/")
 		gamesRemaining = int(gamesFraction[1]) - int(gamesFraction[0])
 		teamGamesRemaining.update({teamNames[i].text: gamesRemaining})
 	return teamGamesRemaining
@@ -133,12 +134,12 @@ Method which handles the general logic of setting lineup for a team.
 2) If we are over the games remaining, moves players out of starting lineup.
 """
 def benchPlayers(driver, gamesRemaining):
-	daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 	# tomorrow = daysList[datetime.today().weekday() + 1]
-	thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
+	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
 	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
-	tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
-	tomorrowButton.click()
+	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
+	# tomorrowButton.click()
 	
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 	rightTable = driver.find_element_by_class_name('Table2__table-scroller')

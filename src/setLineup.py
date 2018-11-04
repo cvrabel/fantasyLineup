@@ -82,7 +82,6 @@ def main(email, password, leagueId, teams, hasGamesPlayedLimit):
 		# Login Page
 		login(email, password, driver)
 
-	gamesRemainingDict.update({"Scranton Stranglers": 3})
 	url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
 	for teamName in teams:
 		driver.get(url)
@@ -136,12 +135,12 @@ Method which handles the general logic of setting lineup for a team.
 3)	If we are not over games remaining and there are opening starts and games on bench, attempt to fix that.
 """
 def setLineup(driver, gamesRemaining):
-	daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 	# tomorrow = daysList[datetime.today().weekday() + 1]
-	thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
+	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
 	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
-	tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
-	tomorrowButton.click()
+	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
+	# tomorrowButton.click()
 	
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
