@@ -2,6 +2,6 @@
 
 pkg_resources/
 src/__pycache__/
-docker-compose.yml
+docker-compose*
 *.log
 build.zip

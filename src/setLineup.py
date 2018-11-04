@@ -8,6 +8,7 @@
 import time
 import sys
 import os
+import benchStarters as bencher
 from argparse import ArgumentParser
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -69,7 +70,7 @@ def main(email, password, leagueId, teams, hasGamesPlayedLimit):
 		time.sleep(1)
 		# Login Page
 		login(email, password, driver)
-		gamesRemainingDict = findGamesRemainingForTeams(driver, url, teams)
+		gamesRemainingDict = bencher.findGamesRemainingForTeams(driver, url, teams)
 		print(gamesRemainingDict)
 
 	else:
@@ -81,6 +82,7 @@ def main(email, password, leagueId, teams, hasGamesPlayedLimit):
 		# Login Page
 		login(email, password, driver)
 
+	gamesRemainingDict.update({"Scranton Stranglers": 3})
 	url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
 	for teamName in teams:
 		driver.get(url)
@@ -115,46 +117,6 @@ def login(username, password, driver):
 	time.sleep(3)
 
 """
-Function to find the number of games remaining for each team by navigating to each box score.
-
-returns: Dict of team name, num games remaining (key, value)
-"""
-def findGamesRemainingForTeams(driver, url, teams):
-	boxScoreButtons = driver.find_elements_by_link_text("BOX SCORE")
-	print(len(boxScoreButtons))
-	teamGamesRemaining = {}
-	for buttonNum in range(len(boxScoreButtons)):
-		print("Navigating to box score " + str(buttonNum))
-		boxScoreButtons[buttonNum].click()
-		time.sleep(2)
-		dictFromBoxScore = findGamesPlayedFromBoxScore(driver)
-		teamGamesRemaining.update(dictFromBoxScore)
-		driver.get(url)
-		time.sleep(2)
-		boxScoreButtons = driver.find_elements_by_link_text("BOX SCORE")
-		if all(team in teamGamesRemaining for team in teams):
-			print("Found games remaining for all teams in team list.")
-			break
-
-	return teamGamesRemaining
-
-"""
-Find games remaining for the 2 teams in this box score.
-
-returns: Dict of length 2. team name, num games remaining (key, value)
-"""
-def findGamesPlayedFromBoxScore(driver):
-	teamNames = driver.find_elements_by_css_selector("span.teamName.truncate")
-	teamLimitDivs = driver.find_elements_by_css_selector("div.team-limits")
-	teamGamesRemaining = {}
-	for i in range(2):
-		gamesPlayedSplitBySpace = teamLimitDivs[i].find_element_by_xpath("//td[contains(text(),'Cur/Max')]").text.split(" ")
-		gamesFraction = gamesPlayedSplitBySpace[2].split("/")
-		gamesRemaining = int(gamesFraction[1]) - int(gamesFraction[0])
-		teamGamesRemaining.update({teamNames[i].text: gamesRemaining})
-	return teamGamesRemaining
-
-"""
 From the league manager page, uses teamName and navigates to the 
 edit roster page for that team.
 """
@@ -174,12 +136,12 @@ Method which handles the general logic of setting lineup for a team.
 3)	If we are not over games remaining and there are opening starts and games on bench, attempt to fix that.
 """
 def setLineup(driver, gamesRemaining):
-	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+	daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 	# tomorrow = daysList[datetime.today().weekday() + 1]
-	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
+	thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
 	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
-	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
-	# tomorrowButton.click()
+	tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
+	tomorrowButton.click()
 	
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
@@ -218,7 +180,7 @@ def setLineup(driver, gamesRemaining):
 					print("Zero games remaining. Don't move to starting lineup.")
 				elif gamesRemaining < 0:
 					print("Too many starting, will go over limit. Moving starting players to bench.")
-					nextIndexToMove, playerList, gamesRemaining = movePlayersOutOfStartingLineup(leftTable, playerList, indexOfBlank, abs(gamesRemaining))
+					nextIndexToMove, playerList, gamesRemaining = bencher.movePlayersOutOfStartingLineup(leftTable, playerList, indexOfBlank, abs(gamesRemaining))
 				break
 			except Exception as e:
 				attempts += 1
@@ -287,43 +249,6 @@ def findIfInjured(playerInfo):
 		return True
 	except:
 		return False
-
-"""
-Invoked only if we are over the games player limit.  
-Moves numToMove players out of the starting lineup.
-Moves the players with lowest percentage owned values to the bench.
-"""
-def movePlayersOutOfStartingLineup(leftTable, playerList, indexOfBlank, numToMove):
-	indicesToRemove = {}
-	# Finding numToMove starting players lowest percent owns
-	for i in range(indexOfBlank):
-		if playerList[i].hasGameToday == False:
-			continue
-
-		currentPercentOwned = playerList[i].percentOwned
-		if len(indicesToRemove) < numToMove:
-			indicesToRemove.update({i: currentPercentOwned })
-		else:
-			for key,value in indicesToRemove.items():
-				if value > currentPercentOwned:
-					del indicesToRemove[key]
-					indicesToRemove.update({i: currentPercentOwned})
-					break
-
-	print("Dict of indices to remove: " + str(indicesToRemove))
-
-	# Move the indices in indicesToRemove to bench
-	for key,value in indicesToRemove.items():
-		time.sleep(1)
-		rowToMove = leftTable.find_element_by_css_selector("[data-idx^='{}']".format(str(key)))
-		time.sleep(1)
-		moveButton = rowToMove.find_element_by_link_text("MOVE").click()
-		time.sleep(1)
-		hereButtons = leftTable.find_elements_by_link_text("HERE")
-		hereButtons[-1].click()
-		numToMove = numToMove - 1
-
-	return -1, playerList, numToMove
 
 """
 Logic to fix corner case where a game is on bench and there is an open spot.

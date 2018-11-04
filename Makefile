@@ -19,8 +19,11 @@ fetch-dependencies:
 docker-build:
 	docker-compose build
 
-docker-run:
+docker-run-setlineup:
 	docker-compose run lambda setLineup.lambda_handler
+
+docker-run-benchstarters:
+	docker-compose run lambda benchStarters.lambda_handler
 
 build-lambda-package: clean fetch-dependencies
 	mkdir build
