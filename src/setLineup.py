@@ -25,10 +25,9 @@ from PlayerRow import PlayerRow
 The main method.
 1)	Opens headless chrome.
 2)	Logs in using given credentials.
-3a) Finds number games remaining for each team if there is a limit and it is Sunday.
-3b) Otherwise just goes to the first team to set lineup. 
+3)  Sets lineup for each team in list
 """
-def main(email, password, leagueId, teams, hasGamesPlayedLimit):
+def main(email, password, leagueId, teams):
 	# driver = None
 	# attempts = 0
 	# while attempts < 5:
@@ -59,41 +58,21 @@ def main(email, password, leagueId, teams, hasGamesPlayedLimit):
 	driver = webdriver.Chrome(chrome_options=chrome_options)
 	print("Webdriver opened chrome")
 
-	daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-	today = daysList[datetime.today().weekday()]
-	gamesRemainingDict = {}
-	if hasGamesPlayedLimit == "True" and (today == 'Sat' or today == 'Sun'):   
-		url = "http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}".format(leagueId)
-		driver.get(url)
-		print("Connected to url")
-		WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
-		time.sleep(1)
-		# Login Page
-		login(email, password, driver)
-		gamesRemainingDict = bencher.findGamesRemainingForTeams(driver, url, teams)
-		print(gamesRemainingDict)
-
-	else:
-		url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
-		driver.get(url)
-		print("Connected to url")
-		WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
-		time.sleep(1)
-		# Login Page
-		login(email, password, driver)
 
 	url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
+	driver.get(url)
+	print("Connected to url")
+	WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
+	time.sleep(1)
+	# Login Page
+	login(email, password, driver)
+
 	for teamName in teams:
-		driver.get(url)
 		print("Setting lineup for " + teamName)
 		navigateToEditRosterPage(teamName, driver)
-		teamGamesRemaining = 20
-		try:
-			teamGamesRemaining = gamesRemainingDict[teamName]
-		except:
-			print("Games Remaining Dictionary is empty.")
-		setLineup(driver, teamGamesRemaining)
+		setLineup(driver)
 		print("Finished setting lineup for " + teamName)
+		driver.get(url)
 
 	driver.quit()
 	print("Webdriver quit")
@@ -129,18 +108,15 @@ def navigateToEditRosterPage(teamName, driver):
 """
 Method which handles the general logic of setting lineup for a team.
 1)	Extracts player info from each row on the roster
-2a) If we have no games remaining, does nothing.
-2b) If we are over the games remaining, moves players out of starting lineup.
-2c) If we are under games remaining, tries moving bench players to starting lineup.
-3)	If we are not over games remaining and there are opening starts and games on bench, attempt to fix that.
+2)  Tries moving bench players to starting lineup.
+3)	If there are still opening starts and games on bench, attempt to fix that.
 """
-def setLineup(driver, gamesRemaining):
+def setLineup(driver):
 	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 	# tomorrow = daysList[datetime.today().weekday() + 1]
-	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
+	thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
 	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
-	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
-	# tomorrowButton.click()
+	tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1].click()
 	
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
@@ -162,38 +138,27 @@ def setLineup(driver, gamesRemaining):
 			indexOfBlank = i 
 			break
 
-	gamesRemaining = gamesRemaining - numStarting
-	if (numStarting >= indexOfBlank and gamesRemaining >= 0) or gamesRemaining == 0:
-		print("Lineup has {} games, and now have {} gamesRemaining. Nothing to change.".format(numStarting, gamesRemaining))
-		return
-
 	nextIndexToMove = indexOfBlank + 1
 	while(True):
 		prettyPrint(playerList, str(nextIndexToMove))
 		attempts = 0
 		while attempts < 3:
 			try:
-				if gamesRemaining > 0:
-					nextIndexToMove, playerList, gamesRemaining = moveBenchPlayer(leftTable, nextIndexToMove, playerList, gamesRemaining)
-				elif gamesRemaining == 0:
-					print("Zero games remaining. Don't move to starting lineup.")
-				elif gamesRemaining < 0:
-					print("Too many starting, will go over limit. Moving starting players to bench.")
-					nextIndexToMove, playerList, gamesRemaining = bencher.movePlayersOutOfStartingLineup(leftTable, playerList, indexOfBlank, abs(gamesRemaining))
+				nextIndexToMove, playerList = moveBenchPlayer(leftTable, nextIndexToMove, playerList)
 				break
 			except Exception as e:
 				attempts += 1
 				print(e)
 				
-		if nextIndexToMove == -1 or nextIndexToMove >= len(playerList) or gamesRemaining == 0:
+		if nextIndexToMove == -1 or nextIndexToMove >= len(playerList):
 			break
 
 	emptyStartingSpots, gamesOnBench = findEmptyStartingSpotsAndGamesOnBench(playerList, indexOfBlank)
 	
-	if len(emptyStartingSpots) > 0 and len(gamesOnBench) > 0 and gamesRemaining > 0:
+	if len(emptyStartingSpots) > 0 and len(gamesOnBench) > 0:
 		print("{} empty starting spots with {} games on bench. Attempting to fix.".format(len(emptyStartingSpots)), len(gamesOnBench))
 		leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
-		attemptToMoveToStartWithReArrange(leftTable, emptyStartingSpots, gamesOnBench, playerList, indexOfBlank, gamesRemaining)
+		attemptToMoveToStartWithReArrange(leftTable, emptyStartingSpots, gamesOnBench, playerList, indexOfBlank)
 
 
 """
@@ -253,7 +218,7 @@ def findIfInjured(playerInfo):
 Logic to fix corner case where a game is on bench and there is an open spot.
 Finds a starter who the bench player can replace, and if starter can move to the empty spot.
 """
-def attemptToMoveToStartWithReArrange(leftTable, emptyStartingSpots, gamesOnBench, playerList, indexOfBlank, gamesRemaining):
+def attemptToMoveToStartWithReArrange(leftTable, emptyStartingSpots, gamesOnBench, playerList, indexOfBlank):
 	numEmptyStartingSpots = len(emptyStartingSpots)
 	numGamesOnBench = len(gamesOnBench)
 	for i in range(indexOfBlank):
@@ -271,8 +236,7 @@ def attemptToMoveToStartWithReArrange(leftTable, emptyStartingSpots, gamesOnBenc
 					prettyPrint(playerList, gamesOnBench[g])
 					numEmptyStartingSpots = numEmptyStartingSpots - 1
 					numGamesOnBench = numGamesOnBench - 1
-					gamesRemaining = gamesRemaining - 1
-				if numEmptyStartingSpots == 0 or numGamesOnBench == 0 or gamesRemaining == 0:
+				if numEmptyStartingSpots == 0 or numGamesOnBench == 0:
 					print("Done rearranging.")
 					return
 
@@ -350,11 +314,11 @@ Move bench player to starting spot if has a game today.
 Click on this player's button, then attempt to move the player 
 to each of his possible here buttons (from top to bottom).
 """
-def moveBenchPlayer(leftTable, indexToMove, playerList, gamesRemaining):
+def moveBenchPlayer(leftTable, indexToMove, playerList):
 	player = playerList[indexToMove]
 	if player.currentPosition != "Bench":
 		print("PlayerToMove not on bench.  Ignoring")
-		return -1, playerList, gamesRemaining
+		return -1, playerList
 
 	if player.hasGameToday:
 		rowToMove = leftTable.find_element_by_css_selector("[data-idx^='{}']".format(str(indexToMove)))
@@ -362,10 +326,10 @@ def moveBenchPlayer(leftTable, indexToMove, playerList, gamesRemaining):
 		moveButton = rowToMove.find_element_by_link_text("MOVE").click()
 		time.sleep(1)
 		hereButtons = leftTable.find_elements_by_link_text("HERE")
-		return attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable, gamesRemaining)
+		return attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable)
 
 	print("PlayerToMove has no game today.  Move to next index.")
-	return indexToMove+1, playerList, gamesRemaining
+	return indexToMove+1, playerList
 
 """
 Iterate through a bench player's possible starting spots and move to first place permitted by logic.
@@ -376,49 +340,51 @@ Can move to spot if:
 	- The starting spot has equal num positions but is less owned
 If we cannot move to any of these spots, return indexToMove+1, indicating to try next guy on bench.
 """
-def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable, gamesRemaining):
+def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 	for button in hereButtons:
 		hereIndex = int(button.find_element_by_xpath("../../../..").get_attribute("data-idx"))
 		playerToMove = playerList[indexToMove]
 		playerAtHereIndex = playerList[hereIndex]
 		if playerToMove.currentPosition != "Bench":
 			print("PlayerToMove not on bench.  Ignoring")
-			return -1, playerList, gamesRemaining
+			return -1, playerList
 		elif playerAtHereIndex.playerName == "Empty":
-			print("Starting position is empty. Moving here.")
+			print("Starting position at {} is empty. Moving here.".format(hereIndex))
 			button.click()
 			playerToMove.currentPosition = playerAtHereIndex.currentPosition
 			playerList[hereIndex] = playerList[indexToMove]
 			del playerList[indexToMove]
-			return indexToMove, playerList, gamesRemaining-1
+			return indexToMove, playerList
 		elif playerAtHereIndex.hasGameToday == False:
-			print("Starting position has no game today. Moving here.")
+			print("Starting position at {} has no game today. Moving here.".format(hereIndex))
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
-			return indexToMove, playerList, gamesRemaining-1
+			return indexToMove, playerList
 		elif len(playerAtHereIndex.positions) > len(playerToMove.positions):
+			print("PlayerToMove has less positions than starter with game at {}. Moving here.".format(hereIndex))
 			print(playerAtHereIndex.positions)
 			print(playerToMove.positions)	
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
-			return indexToMove, playerList, gamesRemaining-1
+			return indexToMove, playerList
 		elif len(playerAtHereIndex.positions) < len(playerToMove.positions):
-			print("PlayerToMove has less positions than starter. Continue to next button.")
+			print("PlayerToMove has more positions than starter at {}. Continue to next button.".format(hereIndex))
 			continue
 		elif playerAtHereIndex.percentOwned < playerToMove.percentOwned:
+			print("PlayerToMove has greater own percentage than starter with game at {}. Moving here.".format(hereIndex))
 			print(playerAtHereIndex.percentOwned)
 			print(playerToMove.percentOwned)
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
-			return indexToMove, playerList, gamesRemaining-1
+			return indexToMove, playerList
 		else:
-			print("Can't more here. Continue to next button.")
+			print("Can't move to {}. Continue to next button.".format(hereIndex))
 			continue
-	print("No place to move. Go to next index.")
+	print("No place to move. Go to next player on bench.")
 	rowToMove = leftTable.find_element_by_css_selector("[data-idx^='{}']".format(str(indexToMove)))
 	time.sleep(1)
 	rowToMove.find_element_by_link_text("MOVE").click()
-	return indexToMove+1, playerList, gamesRemaining
+	return indexToMove+1, playerList
 
 """
 Helper function to swap places of two guys in playerList.
@@ -449,8 +415,7 @@ def lambda_handler(event, context):
 	password = os.environ['password']
 	leagueId = os.environ['leagueId']
 	teams = os.environ['teams'].split(",")
-	hasGamesPlayedLimit = os.environ['hasGamesPlayedLimit']
-	return main(email, password, leagueId, teams, hasGamesPlayedLimit)
+	return main(email, password, leagueId, teams)
 
 """
 For if we run in command line
@@ -466,5 +431,5 @@ if __name__ == '__main__':
 	parser.add_argument
 	args = parser.parse_args()
 	startTime = time.time()
-	main(args.email, args.password, args.leagueId, "Scranton Stranglers", "True")
+	main(args.email, args.password, args.leagueId, "Scranton Stranglers")
 	print("--- %s seconds to execute ---" % (time.time() - startTime))
