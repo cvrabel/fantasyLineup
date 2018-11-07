@@ -156,7 +156,7 @@ def setLineup(driver):
 	emptyStartingSpots, gamesOnBench = findEmptyStartingSpotsAndGamesOnBench(playerList, indexOfBlank)
 	
 	if len(emptyStartingSpots) > 0 and len(gamesOnBench) > 0:
-		print("{} empty starting spots with {} games on bench. Attempting to fix.".format(len(emptyStartingSpots)), len(gamesOnBench))
+		print("{} empty starting spots with {} games on bench. Attempting to fix.".format(len(emptyStartingSpots), len(gamesOnBench)))
 		leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 		attemptToMoveToStartWithReArrange(leftTable, emptyStartingSpots, gamesOnBench, playerList, indexOfBlank)
 
