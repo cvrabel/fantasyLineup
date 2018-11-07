@@ -114,9 +114,9 @@ Method which handles the general logic of setting lineup for a team.
 def setLineup(driver):
 	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 	# tomorrow = daysList[datetime.today().weekday() + 1]
-	thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
+	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
 	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
-	tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1].click()
+	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1].click()
 	
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
@@ -361,9 +361,7 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
 		elif len(playerAtHereIndex.positions) > len(playerToMove.positions):
-			print("PlayerToMove has less positions than starter with game at {}. Moving here.".format(hereIndex))
-			print(playerAtHereIndex.positions)
-			print(playerToMove.positions)	
+			print("PlayerToMove has less positions than starter with game at {}. Moving here.".format(hereIndex))	
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
@@ -372,8 +370,6 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 			continue
 		elif playerAtHereIndex.percentOwned < playerToMove.percentOwned:
 			print("PlayerToMove has greater own percentage than starter with game at {}. Moving here.".format(hereIndex))
-			print(playerAtHereIndex.percentOwned)
-			print(playerToMove.percentOwned)
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
