@@ -39,6 +39,7 @@ def main(email, password, leagueId, teams):
 
 	chrome_options = webdriver.ChromeOptions()
 	chrome_options.add_argument('--headless')
+	chrome_options.add_argument('--incognito')
 	chrome_options.add_argument('--no-sandbox')
 	chrome_options.add_argument('--disable-gpu')
 	chrome_options.add_argument('--window-size=1280x1696')
@@ -99,11 +100,11 @@ def findGamesRemainingForTeams(driver, url, teams):
 	for buttonNum in range(len(boxScoreButtons)):
 		print("Navigating to box score " + str(buttonNum))
 		boxScoreButtons[buttonNum].click()
-		time.sleep(2)
+		time.sleep(4)
 		dictFromBoxScore = findGamesPlayedFromBoxScore(driver)
 		teamGamesRemaining.update(dictFromBoxScore)
 		driver.get(url)
-		time.sleep(2)
+		time.sleep(4)
 		boxScoreButtons = driver.find_elements_by_link_text("BOX SCORE")
 		if all(team in teamGamesRemaining for team in teams):
 			print("Found games remaining for all teams in team list.")
