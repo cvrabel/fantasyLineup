@@ -2,8 +2,8 @@
 
 Within the src/ folder you can find two scripts:
 
-1) *setLineup.py* - Automatically sets the lineup for teams.
-2) *benchStarters.py* - Benches players in starting lineup if team will be going over the games played limit.
+1) **setLineup.py** - Automatically sets the lineup for teams.
+2) **benchStarters.py** - Benches players in starting lineup if team will be going over the games played limit.
 
 Both scripts use the credentials of league manager and the league manager tool to perform their function on each team in the 'teams' environment variable. 
 
@@ -15,7 +15,7 @@ The way the lineup is set is definitely not the most efficient way, but gets the
 Currently in my leagues with 12 teams, both scripts take around 3-5 minutes each to complete all teams.  On AWS Lambda I've allocated 2048 mb of memory for the functions.
 
 ### One missing file in the repo!
-From the blog post you can see that I am missing one file in my repo: docker-compose.yml  
+From the blog post (see below) you can see that I am missing one file in my repo: docker-compose.yml  
 This is needed to test the lambda locally, and wasn't included due to my login credentials being there.  Here is how mine looks:
 ```
 version: '3'
