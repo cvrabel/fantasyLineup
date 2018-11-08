@@ -35,7 +35,7 @@ services:
 ```
 
 ### Setting things up
-[Take a look at this blog post and follow the steps to get your workspace setup.](https://robertorocha.info/setting-up-a-selenium-web-scraper-on-aws-lambda-with-python/) for how to set up selenium to run on AWS Lambda.  This was quite painful to figure out, and this helped me get it done. 
+[Take a look at this blog post](https://robertorocha.info/setting-up-a-selenium-web-scraper-on-aws-lambda-with-python/) and follow the steps to get your workspace setup to deploy a python selenium script to run on AWS Lambda.  This was quite painful to figure out, and the blog post helped me immensely. 
 
 Make sure you install Docker AND Docker Compose.  And you can install the dependencies by running ```sudo make fetch-dependencies```.
 
@@ -50,6 +50,11 @@ For me I have a lambda hosting the setLineup script which runs every day, and an
 To upload I follow these steps:
 1) sudo make build-lambda-package
 2) aws cli command to upload zip file to S3 bucket (need to upload to S3 first because size is too large to upload directly to lambda)
+   - If creating for the first time: ```aws s3 mb s3://BUCKET_NAME``` (creates your bucket)
+   - Upload the zipfile to the bucket: ```aws s3 cp build.zip s3://BUCKET_NAME```
 3) aws cli command to upload the S3 file to lambda function
+   - If creating for the first time: ```aws lambda create-function --region us-east-2 --function-name YOUR_FUNCTION_NAME --handler benchStarters.lambda_handler --runtime python3.6 --timeout 900 --memory-size 2048 --role [THE ARN OF YOUR IAM ROLE WHICH CAN DEPLOY TO LAMBDA] --code S3Bucket=BUCKET_NAME,S3Key=build.zip```
+   - If updating your existing lambda: ```aws lambda update-function-code --function-name YOUR_FUNCTION_NAME --s3-bucket BUCKET_NAME --s3-key build.zip```
+
 
 Once you upload to Lambda, make sure you include the correct environment variables (the ones in the docker-compose.yml that I did not include).
