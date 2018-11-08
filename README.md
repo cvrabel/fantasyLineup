@@ -53,7 +53,7 @@ To upload I follow these steps:
    - If creating for the first time: ```aws s3 mb s3://BUCKET_NAME``` (creates your bucket)
    - Upload the zipfile to the bucket: ```aws s3 cp build.zip s3://BUCKET_NAME```
 3) aws cli command to upload the S3 file to lambda function
-   - If creating for the first time: ```aws lambda create-function --region us-east-2 --function-name YOUR_FUNCTION_NAME --handler benchStarters.lambda_handler --runtime python3.6 --timeout 900 --memory-size 2048 --role [THE ARN OF YOUR IAM ROLE WHICH CAN DEPLOY TO LAMBDA] --code S3Bucket=BUCKET_NAME,S3Key=build.zip```
+   - If creating for the first time: ```aws lambda create-function --region us-east-2 --function-name YOUR_FUNCTION_NAME --handler (benchStarters.lambda_handler OR setLineup.lambda_handler) --runtime python3.6 --timeout 900 --memory-size 2048 --role [THE ARN OF YOUR IAM ROLE WHICH CAN DEPLOY TO LAMBDA] --code S3Bucket=BUCKET_NAME,S3Key=build.zip```
    - If updating your existing lambda: ```aws lambda update-function-code --function-name YOUR_FUNCTION_NAME --s3-bucket BUCKET_NAME --s3-key build.zip```
 
 

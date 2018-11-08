@@ -141,7 +141,8 @@ def setLineup(driver):
 
 	nextIndexToMove = indexOfBlank + 1
 	while(True):
-		prettyPrint(playerList, str(nextIndexToMove))
+		prettyPrint(playerList)
+		print("Attempting to move {}".format(nextIndexToMove))
 		attempts = 0
 		while attempts < 3:
 			try:
@@ -232,9 +233,8 @@ def attemptToMoveToStartWithReArrange(leftTable, emptyStartingSpots, gamesOnBenc
 					print("Can move currentSpot: {} to emptyStart: {}. Can move gameOnBench: {} to currentSpot: {}" \
 						.format(str(i), str(emptyStartingSpots[e]), str(gamesOnBench[g]), str(i)))
 					playerList = moveToSpecificIndex(leftTable, i, emptyStartingSpots[e], playerList)
-					prettyPrint(playerList, i)
 					playerList = moveToSpecificIndex(leftTable, gamesOnBench[g], i, playerList)
-					prettyPrint(playerList, gamesOnBench[g])
+					prettyPrint(playerList)
 					numEmptyStartingSpots = numEmptyStartingSpots - 1
 					numGamesOnBench = numGamesOnBench - 1
 				if numEmptyStartingSpots == 0 or numGamesOnBench == 0:
@@ -397,9 +397,8 @@ def swapPositions(indexToMove, hereIndex, playerList):
 """
 Print the playerList better for clearer logging.
 """
-def prettyPrint(playerList, nextIndexToMove):
+def prettyPrint(playerList):
 	print("-----------------")
-	print("Index to Move: " + str(nextIndexToMove))
 	for i in range(0, len(playerList)):
 		player = playerList[i]
 		print(player.currentPosition + "(" + str(i) + "): " + player.playerName)

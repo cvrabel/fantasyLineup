@@ -82,6 +82,7 @@ def main(email, password, leagueId, teams):
 		except:
 			print("Games Remaining Dictionary is empty.")
 		benchPlayers(driver, teamGamesRemaining)
+		
 		print("Finished benching games for " + teamName)
 
 	driver.quit()
@@ -165,7 +166,7 @@ def benchPlayers(driver, gamesRemaining):
 	gamesRemaining = gamesRemaining - numStarting
 
 	nextIndexToMove = indexOfBlank + 1
-	setter.prettyPrint(playerList, str(nextIndexToMove))
+	setter.prettyPrint(playerList)
 	attempts = 0
 	if gamesRemaining < 0:
 		print("Over the limit.  Moving players out of starting lineup.")
@@ -214,7 +215,7 @@ def movePlayersOutOfStartingLineup(leftTable, playerList, indexOfBlank, numToMov
 		hereButtons[-1].click()
 		numToMove = numToMove - 1
 
-	return -1, playerList, numToMove
+	setter.prettyPrint(playerList)
 
 """
 Handler needed for aws lambda.
