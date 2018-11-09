@@ -337,6 +337,7 @@ Iterate through a bench player's possible starting spots and move to first place
 Can move to spot if:
 	- The starting spot is empty
 	- The starting spot has no game today
+	- The starting spot is a UTIL spot and is less owned
 	- The starting spot has more positions 
 	- The starting spot has equal num positions but is less owned
 If we cannot move to any of these spots, return indexToMove+1, indicating to try next guy on bench.
@@ -358,6 +359,11 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 			return indexToMove, playerList
 		elif playerAtHereIndex.hasGameToday == False:
 			print("Starting position at {} has no game today. Moving here.".format(hereIndex))
+			button.click()
+			playerList = swapPositions(indexToMove, hereIndex, playerList)
+			return indexToMove, playerList
+		elif playerAtHereIndex.currentPosition == 'UTIL' and playerAtHereIndex.percentOwned < playerToMove.percentOwned:
+			print("PlayerToMove has greater own percentage than starter in UTIL spot. Moving to index {}".format(hereIndex))
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
