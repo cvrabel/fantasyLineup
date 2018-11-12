@@ -1,4 +1,3 @@
-# Player per game stats for a season
 class PlayerRow:
 
 	def __init__(self, playerName: str, currentPosition: str, positions: list, hasGameToday: bool, isInjured: bool, percentOwned: float, pr15: float):

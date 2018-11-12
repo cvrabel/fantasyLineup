@@ -68,7 +68,6 @@ def main(email, password, leagueId, teams):
 	# Login Page
 	setter.login(email, password, driver)
 	gamesRemainingDict = findGamesRemainingForTeams(driver, url, teams)
-
 	print(gamesRemainingDict)
 
 	url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
@@ -76,11 +75,7 @@ def main(email, password, leagueId, teams):
 		driver.get(url)
 		print("Benching games over limit for " + teamName)
 		setter.navigateToEditRosterPage(teamName, driver)
-		teamGamesRemaining = 20
-		try:
-			teamGamesRemaining = gamesRemainingDict[teamName]
-		except:
-			print("Games Remaining Dictionary is empty.")
+		teamGamesRemaining = gamesRemainingDict[teamName]
 		benchPlayers(driver, teamGamesRemaining)
 		
 		print("Finished benching games for " + teamName)
@@ -104,12 +99,12 @@ def findGamesRemainingForTeams(driver, url, teams):
 		time.sleep(4)
 		dictFromBoxScore = findGamesPlayedFromBoxScore(driver)
 		teamGamesRemaining.update(dictFromBoxScore)
+		if len(teamGamesRemaining) == len(teams):
+			print("Found games remaining for all teams in team list.")
+			break
 		driver.get(url)
 		time.sleep(4)
 		boxScoreButtons = driver.find_elements_by_link_text("BOX SCORE")
-		if all(team in teamGamesRemaining for team in teams):
-			print("Found games remaining for all teams in team list.")
-			break
 
 	return teamGamesRemaining
 
@@ -132,8 +127,9 @@ def findGamesPlayedFromBoxScore(driver):
 
 """
 Method which handles the general logic of setting lineup for a team.
-1)	Extracts player info from each row on the roster
-2) If we are over the games remaining, moves players out of starting lineup.
+1) Extracts player info from each row on the roster
+2) If we are over the games remaining (don't count as game if the player is injured), 
+   moves players out of starting lineup.
 """
 def benchPlayers(driver, gamesRemaining):
 	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -157,7 +153,7 @@ def benchPlayers(driver, gamesRemaining):
 	indexOfBlank = 10
 	numStarting = 0
 	for i in range(0, len(playerList)):
-		if playerList[i].hasGameToday == True:
+		if playerList[i].hasGameToday == True and playerList[i].isInjured == False:
 			numStarting = numStarting + 1
 		if playerList[i].playerName == "BLANK":
 			indexOfBlank = i 
@@ -166,13 +162,13 @@ def benchPlayers(driver, gamesRemaining):
 	gamesRemaining = gamesRemaining - numStarting
 
 	nextIndexToMove = indexOfBlank + 1
-	setter.prettyPrint(playerList)
 	attempts = 0
 	if gamesRemaining < 0:
 		print("Over the limit.  Moving players out of starting lineup.")
 		while attempts < 3:
 			try:
 				movePlayersOutOfStartingLineup(leftTable, playerList, indexOfBlank, abs(gamesRemaining))
+				setter.prettyPrint(playerList)
 				break
 			except Exception as e:
 				attempts += 1
@@ -181,7 +177,7 @@ def benchPlayers(driver, gamesRemaining):
 		print("Not over limit.  Doing nothing.")
 			
 """
-Invoked only if we are over the games player limit.  
+Invoked only if we are over the games played limit.  
 Moves numToMove players out of the starting lineup.
 Moves the players with lowest percentage owned values to the bench.
 """

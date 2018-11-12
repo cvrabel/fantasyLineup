@@ -28,15 +28,7 @@ The main method.
 3)  Sets lineup for each team in list
 """
 def main(email, password, leagueId, teams):
-	# driver = None
-	# attempts = 0
-	# while attempts < 5:
-	# 	try:
-	# 		driver = webdriver.Chrome(chrome_options=chrome_options)
-	# 		break
-	# 	except:
-	# 		attempts += 1
-
+	
 	chrome_options = webdriver.ChromeOptions()
 	chrome_options.add_argument('--headless')
 	chrome_options.add_argument('--incognito')
