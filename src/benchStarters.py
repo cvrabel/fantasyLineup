@@ -28,15 +28,7 @@ The main method.
 3a) Sits games in starting lineup so team does not exceed max games.
 """
 def main(email, password, leagueId, teams):
-	# driver = None
-	# attempts = 0
-	# while attempts < 5:
-	# 	try:
-	# 		driver = webdriver.Chrome(chrome_options=chrome_options)
-	# 		break
-	# 	except:
-	# 		attempts += 1
-
+	
 	chrome_options = webdriver.ChromeOptions()
 	chrome_options.add_argument('--headless')
 	chrome_options.add_argument('--incognito')
@@ -59,12 +51,12 @@ def main(email, password, leagueId, teams):
 	driver = webdriver.Chrome(chrome_options=chrome_options)
 	print("Webdriver opened chrome")
 
-
 	url = "http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}".format(leagueId)
 	driver.get(url)
-	print("Connected to url")
+	print("Connected to ESPN fantasy basketball.")
 	WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
 	time.sleep(1)
+	
 	# Login Page
 	setter.login(email, password, driver)
 	gamesRemainingDict = findGamesRemainingForTeams(driver, url, teams)
@@ -132,12 +124,6 @@ Method which handles the general logic of setting lineup for a team.
    moves players out of starting lineup.
 """
 def benchPlayers(driver, gamesRemaining):
-	# daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-	# tomorrow = daysList[datetime.today().weekday() + 1]
-	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
-	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
-	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1]
-	# tomorrowButton.click()
 	
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 	rightTable = driver.find_element_by_class_name('Table2__table-scroller')

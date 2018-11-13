@@ -3,12 +3,11 @@
 # 10/19/18
 
 # Lambda Script for Fantasy Basketball lineup setting.
-# Login as League Manager and set specified team's lineup.
+# Login as League Manager and set all specified teams' lineups.
 
 import time
 import sys
 import os
-import benchStarters as bencher
 from argparse import ArgumentParser
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -51,10 +50,9 @@ def main(email, password, leagueId, teams):
 	driver = webdriver.Chrome(chrome_options=chrome_options)
 	print("Webdriver opened chrome")
 
-
 	url = "http://fantasy.espn.com/basketball/tools/lmrostermoves?leagueId={}".format(leagueId)
 	driver.get(url)
-	print("Connected to url")
+	print("Connected to ESPN fantasy basketball.")
 	WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
 	time.sleep(1)
 	# Login Page
@@ -354,11 +352,15 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
-		elif playerAtHereIndex.currentPosition == 'UTIL' and playerAtHereIndex.percentOwned < playerToMove.percentOwned:
-			print("PlayerToMove has greater own percentage than starter in UTIL spot. Moving to index {}".format(hereIndex))
-			button.click()
-			playerList = swapPositions(indexToMove, hereIndex, playerList)
-			return indexToMove, playerList
+		elif playerAtHereIndex.currentPosition == 'UTIL':
+			if playerAtHereIndex.percentOwned < playerToMove.percentOwned
+				print("PlayerToMove has greater own percentage than starter in UTIL spot. Moving to index {}".format(hereIndex))
+				button.click()
+				playerList = swapPositions(indexToMove, hereIndex, playerList)
+				return indexToMove, playerList
+			else:
+				print("Player at UTIL spot {} is greater owned. Continue to next button.".format(hereIndex))
+				continue
 		elif len(playerAtHereIndex.positions) > len(playerToMove.positions):
 			print("PlayerToMove has less positions than starter with game at {}. Moving here.".format(hereIndex))	
 			button.click()
