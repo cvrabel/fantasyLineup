@@ -25,6 +25,9 @@ docker-run-setlineup:
 docker-run-benchstarters:
 	docker-compose run lambda benchStarters.lambda_handler
 
+docker-run-setOneLineup:
+	docker-compose run lambda setOneLineup.lambda_handler
+
 build-lambda-package: clean fetch-dependencies
 	mkdir build
 	cp -r src build/.

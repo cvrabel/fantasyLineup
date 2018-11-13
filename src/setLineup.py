@@ -83,6 +83,7 @@ def login(username, password, driver):
 	passwordInput.send_keys(Keys.RETURN)
 	
 	driver.switch_to_default_content()
+	print("Logged in.")
 	time.sleep(3)
 
 """
@@ -108,7 +109,7 @@ def setLineup(driver):
 	# thisWeek = driver.find_element_by_css_selector("div.Week.currentWeek")
 	# tomorrowButton = thisWeek.find_element_by_xpath("//*[contains(text(), '{}')]".format(tomorrow))
 	# tomorrowButton = thisWeek.find_elements_by_css_selector("div.jsx-1917748593.custom--day")[-1].click()
-	
+ 
 	leftTable = driver.find_element_by_class_name('Table2__Table--fixed--left')
 	rightTable = driver.find_element_by_class_name('Table2__table-scroller')
 
@@ -353,7 +354,7 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
 		elif playerAtHereIndex.currentPosition == 'UTIL':
-			if playerAtHereIndex.percentOwned < playerToMove.percentOwned
+			if playerAtHereIndex.percentOwned < playerToMove.percentOwned:
 				print("PlayerToMove has greater own percentage than starter in UTIL spot. Moving to index {}".format(hereIndex))
 				button.click()
 				playerList = swapPositions(indexToMove, hereIndex, playerList)

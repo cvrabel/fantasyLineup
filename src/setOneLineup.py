@@ -47,7 +47,7 @@ def main(email, password, leagueId, teamId):
 	chrome_options.add_argument('--disk-cache-dir=/tmp/cache-dir')
 	chrome_options.add_argument('user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')
 	chrome_options.binary_location = os.getcwd() + "/bin/headless-chromium"
-	 
+	
 	driver = webdriver.Chrome(chrome_options=chrome_options)
 	print("Webdriver opened chrome")
 
@@ -55,11 +55,11 @@ def main(email, password, leagueId, teamId):
 	driver.get(url)
 	print("Connected to ESPN fantasy basketball.")
 	WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
-	time.sleep(1)
+	time.sleep(3)
 	
 	# Login Page
 	setter.login(email, password, driver)
-	time.sleep(4)
+	time.sleep(3)
 	print("Setting lineup for teamId: ".format(teamId))
 	setter.setLineup(driver)
 	print("Finished setting lineup.")
@@ -89,8 +89,10 @@ if __name__ == '__main__':
 		help="ESPN login password", required=True)
 	parser.add_argument("-l", "--leagueId", type=str, 
 		help="ESPN fantasy basketball leagueId", required=True)
+	parser.add_argument("-t", "--teamId", type=str, 
+		help="ESPN fantasy basketball teamId", required=True)
 	parser.add_argument
 	args = parser.parse_args()
 	startTime = time.time()
-	main(args.email, args.password, args.leagueId)
+	main(args.email, args.password, args.leagueId, args.teamId)
 	print("--- %s seconds to execute ---" % (time.time() - startTime))
