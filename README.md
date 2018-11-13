@@ -1,22 +1,24 @@
 # Fantasy Basketball Lineup Scripts
 
-Within the src/ folder you can find two scripts:
+Within the src/ folder you can find three scripts:
 
-1) **setLineup.py** - Automatically sets the lineup for teams.
-2) **benchStarters.py** - Benches players in starting lineup if team will be going over the games played limit.
+1) **setLineup.py** - Automatically sets the lineup for all specified teams, using the league manager tool. 
+2) **benchStarters.py** - Benches players in starting lineup if team will be going over the games played limit. 
+3) **setOneLineup.py** - Sets the lineup for just one specified team (by teamId).
 
-Both scripts use the credentials of league manager and the league manager tool to perform their function on each team in the 'teams' environment variable. 
+The first two scripts use the credentials of league manager and the league manager tool to perform their function on each team in the 'teams' environment variable.  
+The third script can be used even if you don't have league manager powers.  You must give your credentials plus the teamId and leagueId of the one lineup you want to set.
 
 These scripts are configured to work on AWS Lambda. I've set triggers to run them at a certain desired time each day.  
 
 ##### Notes
 The way the lineup is set is definitely not the most efficient way, but gets the job done for now. (I'm not 100% sure all corner cases have been handled at the moment). At some point down the road I may attempt to clean up the algorithm and make it cleaner/more efficient.
 
-Currently in my leagues with 12 teams, both scripts take around 3-5 minutes each to complete all teams.  On AWS Lambda I've allocated 2048 mb of memory for the functions.
+Currently in my leagues with 12 teams, setLineup takes ~3 min and benchStarters takes ~5 min. On AWS Lambda I've allocated 2048 mb of memory for the functions. It could probably be between 1200-1500 but I'm well in the free tier so I kept it at 2048.
 
 ### One missing file in the repo!
 From the blog post (see below) you can see that I am missing one file in my repo: docker-compose.yml  
-This is needed to test the lambda locally, and wasn't included due to my login credentials being there.  Here is how mine looks:
+This is needed to test the lambda locally, and wasn't included due to my login credentials being there.  Here is how mine looks for the setLineup and benchStarters scripts:
 ```
 version: '3'
 
@@ -45,7 +47,7 @@ Make sure you install Docker AND Docker Compose.  And you can install the depend
 
 ### Uploading to AWS lambda:
 
-For me I have a lambda hosting the setLineup script which runs every day, and another lambda hosting the benchStarters script which runs on Fri,Sat,Sun (after the setLineup script is done).
+For me I have a lambda hosting the setLineup script which runs every day, and another lambda hosting the benchStarters script which runs on Fri,Sat,Sun (after the setLineup script is done). Right now its just scheduled to run after, but it will probably be better to have the setLineup script send an SNS notification which triggers the lambda.
 
 To upload I follow these steps:
 1) sudo make build-lambda-package

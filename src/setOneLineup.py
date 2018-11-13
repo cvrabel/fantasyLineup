@@ -27,7 +27,7 @@ The main method.
 2)	Logs in using given credentials.
 3)  Sets lineup for each team in list
 """
-def main(email, password, leagueId, teamId, seasonId):
+def main(email, password, leagueId, teamId):
 	
 	chrome_options = webdriver.ChromeOptions()
 	chrome_options.add_argument('--headless')
@@ -51,7 +51,7 @@ def main(email, password, leagueId, teamId, seasonId):
 	driver = webdriver.Chrome(chrome_options=chrome_options)
 	print("Webdriver opened chrome")
 
-	url = "http://fantasy.espn.com/basketball/team?/team?leagueId={}&teamId={}&seasonId={}".format(leagueId, teamId, seasonId)
+	url = "http://fantasy.espn.com/basketball/team?/team?leagueId={}&teamId={}".format(leagueId, teamId)
 	driver.get(url)
 	print("Connected to ESPN fantasy basketball.")
 	WebDriverWait(driver, 1000).until(EC.presence_of_all_elements_located((By.XPATH,"(//iframe)")))
@@ -76,8 +76,7 @@ def lambda_handler(event, context):
 	password = os.environ['password']
 	leagueId = os.environ['leagueId']
 	teamId = os.environ['teamId']
-	seasonId = os.environ['seasonId']
-	return main(email, password, leagueId, teamId, seasonId)
+	return main(email, password, leagueId, teamId)
 
 """
 For if we run in command line
