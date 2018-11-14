@@ -353,6 +353,14 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
+		elif playerAtHereIndex.isInjured and not playerToMove.isInjured:
+			print("PlayerToMove is not injured and starter at {} is injured. Moving here.".format(hereIndex))
+			button.click()
+			playerList = swapPositions(indexToMove, hereIndex, playerList)
+			return indexToMove, playerList
+		elif not playerAtHereIndex.isInjured and playerToMove.isInjured:
+			print("PlayerToMove is injured and player at index {} is not. Continue to next button.".format(hereIndex))
+			continue
 		elif playerAtHereIndex.currentPosition == 'UTIL':
 			if playerAtHereIndex.percentOwned < playerToMove.percentOwned:
 				print("PlayerToMove has greater own percentage than starter in UTIL spot. Moving to index {}".format(hereIndex))
@@ -372,11 +380,6 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 			continue
 		elif playerAtHereIndex.percentOwned < playerToMove.percentOwned:
 			print("PlayerToMove has greater own percentage than starter with game at {}. Moving here.".format(hereIndex))
-			button.click()
-			playerList = swapPositions(indexToMove, hereIndex, playerList)
-			return indexToMove, playerList
-		elif playerAtHereIndex.isInjured and not playerToMove.isInjured:
-			print("PlayerToMove is not injured and starter at {} is injured. Moving here.".format(hereIndex))
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
