@@ -169,8 +169,8 @@ def extractPlayerFromRow(playerInfo, playerStats):
 	positions = playerInfo.find_element_by_css_selector("span.playerinfo__playerpos.ttu").text.split(", ")
 	hasGameToday = findIfHasGameToday(playerInfo)
 	isInjured = findIfInjured(playerInfo)
-	percentOwned = playerStats.find_element_by_css_selector("[title='Percent Owned']").text
-	pr15 = playerStats.find_element_by_css_selector("[title^='Player Rating']").text
+	percentOwned = float(playerStats.find_element_by_css_selector("[title='Percent Owned']").text)
+	pr15 = float(playerStats.find_element_by_css_selector("[title^='Player Rating']").text)
 	return PlayerRow(playerName, currentPosition, positions, hasGameToday, isInjured, percentOwned, pr15)
 
 """
@@ -372,6 +372,11 @@ def attemptToMoveToStart(indexToMove, hereButtons, playerList, leftTable):
 			continue
 		elif playerAtHereIndex.percentOwned < playerToMove.percentOwned:
 			print("PlayerToMove has greater own percentage than starter with game at {}. Moving here.".format(hereIndex))
+			button.click()
+			playerList = swapPositions(indexToMove, hereIndex, playerList)
+			return indexToMove, playerList
+		elif playerAtHereIndex.isInjured and not playerToMove.isInjured:
+			print("PlayerToMove is not injured and starter at {} is injured. Moving here.".format(hereIndex))
 			button.click()
 			playerList = swapPositions(indexToMove, hereIndex, playerList)
 			return indexToMove, playerList
