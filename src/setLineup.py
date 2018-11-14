@@ -58,12 +58,17 @@ def main(email, password, leagueId, teams):
 	# Login Page
 	login(email, password, driver)
 
-	for teamName in teams:
+	for t in range(len(teams)):
+		teamName = teams[t]
 		print("Setting lineup for " + teamName)
 		navigateToEditRosterPage(teamName, driver)
 		setLineup(driver)
 		print("Finished setting lineup for " + teamName)
-		driver.get(url)
+
+		if t == len(teams)-1:
+			pass
+		else:
+			driver.get(url)
 
 	driver.quit()
 	print("Webdriver quit")
@@ -170,7 +175,7 @@ def extractPlayerFromRow(playerInfo, playerStats):
 	hasGameToday = findIfHasGameToday(playerInfo)
 	isInjured = findIfInjured(playerInfo)
 	percentOwned = float(playerStats.find_element_by_css_selector("[title='Percent Owned']").text)
-	pr15 = float(playerStats.find_element_by_css_selector("[title^='Player Rating']").text)
+	pr15 = 0 #Not using pr15 for now... float(playerStats.find_element_by_css_selector("[title^='Player Rating']").text)
 	return PlayerRow(playerName, currentPosition, positions, hasGameToday, isInjured, percentOwned, pr15)
 
 """
