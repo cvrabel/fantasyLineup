@@ -283,6 +283,14 @@ def canMoveToSpot(fromSpot, toSpot):
 		return findIfPositionsContains(fromPositions, "G")
 	elif toPosition == "F":
 		return findIfPositionsContains(fromPositions, "F")
+	elif toPosition == "SG/SF":
+		return (findIfPositionsContains(fromPositions, "SG") or findIfPositionsContains(fromPositions, "SF"))
+	elif toPosition == "G/F":
+		return (findIfPositionsContains(fromPositions, "G") or findIfPositionsContains(fromPositions, "F"))
+	elif toPosition == "F/C":
+		return (findIfPositionsContains(fromPositions, "F") or findIfPositionsContains(fromPositions, "C"))
+	elif toPosition == "PF/C":
+		return (findIfPositionsContains(fromPositions, "PF") or findIfPositionsContains(fromPositions, "C"))
 
 """
 Return true if one of the player's positions is elibile for this position.
